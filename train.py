@@ -19,6 +19,7 @@ import pretrainedmodels.utils
 from model import get_model
 from dataset import FaceDataset
 from defaults import _C as cfg
+import ssl
 
 
 def get_args():
@@ -243,4 +244,5 @@ def main():
 
 
 if __name__ == '__main__':
+    ssl._create_default_https_context = ssl._create_unverified_context
     main()

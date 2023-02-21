@@ -23,9 +23,9 @@ def get_args():
                         help="Model weight to be tested")
     parser.add_argument("--margin", type=float, default=0.4,
                         help="Margin around detected face for age-gender estimation")
-    parser.add_argument("--img_dir", type=str, default=None,
+    parser.add_argument("--img_dir", type=str, default="D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/photo",
                         help="Target image directory; if set, images in image_dir are used instead of webcam")
-    parser.add_argument("--output_dir", type=str, default=None,
+    parser.add_argument("--output_dir", type=str, default="D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/photo/result",
                         help="Output directory to which resulting images will be stored if set")
     parser.add_argument("opts", default=[], nargs=argparse.REMAINDER,
                         help="Modify config options using the command-line")

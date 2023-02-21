@@ -2,6 +2,7 @@
 python demo.py
 
 ##to read files
-python demo.py --img_dir D:\Python_jupyter_file\MAP583\age_estimation\photo
-python demo.py --img_dir D:\Python_jupyter_file\MAP583\age_estimation\photo --output_dir D:\Python_jupyter_file\MAP583\age_estimation\photo\result
+change default in demo
+python demo.py --img_dir D:\Python_jupyter_file\MAP583\Project-age-estimation-pytorch\photo
+python demo.py --img_dir D:\Python_jupyter_file\MAP583\Project-age-estimation-pytorch\photo --output_dir D:\Python_jupyter_file\MAP583\Project-age-estimation-pytorch\photo\result
 
