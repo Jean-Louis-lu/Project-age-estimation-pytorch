@@ -1,0 +1,7 @@
+## to use webcam
+python demo.py
+
+##to read files
+python demo.py --img_dir D:\Python_jupyter_file\MAP583\age_estimation\photo
+python demo.py --img_dir D:\Python_jupyter_file\MAP583\age_estimation\photo --output_dir D:\Python_jupyter_file\MAP583\age_estimation\photo\result
+
