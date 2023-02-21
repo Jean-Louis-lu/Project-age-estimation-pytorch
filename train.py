@@ -19,7 +19,7 @@ import pretrainedmodels.utils
 from model import get_model
 from dataset import FaceDataset
 from defaults import _C as cfg
-##tryii
+
 
 def get_args():
     model_names = sorted(name for name in pretrainedmodels.__dict__
@@ -61,6 +61,7 @@ def train(train_loader, model, criterion, optimizer, epoch, device):
     with tqdm(train_loader) as _tqdm:
         for x, y in _tqdm:
             x = x.to(device)
+            y = y.type(torch.LongTensor)
             y = y.to(device)
 
             # compute output
@@ -149,7 +150,7 @@ def main():
     # create model
     print("=> creating model '{}'".format(cfg.MODEL.ARCH))
     model = get_model(model_name=cfg.MODEL.ARCH)
-
+    
     if cfg.TRAIN.OPT == "sgd":
         optimizer = torch.optim.SGD(model.parameters(), lr=cfg.TRAIN.LR,
                                     momentum=cfg.TRAIN.MOMENTUM,
@@ -158,6 +159,7 @@ def main():
         optimizer = torch.optim.Adam(model.parameters(), lr=cfg.TRAIN.LR)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
+
     model = model.to(device)
 
     # optionally resume from a checkpoint
@@ -180,7 +182,7 @@ def main():
 
     if device == "cuda":
         cudnn.benchmark = True
-
+    
     criterion = nn.CrossEntropyLoss().to(device)
     train_dataset = FaceDataset(args.data_dir, "train", img_size=cfg.MODEL.IMG_SIZE, augment=True,
                                 age_stddev=cfg.TRAIN.AGE_STDDEV)
@@ -200,14 +202,14 @@ def main():
         opts_prefix = "_".join(args.opts)
         train_writer = SummaryWriter(log_dir=args.tensorboard + "/" + opts_prefix + "_train")
         val_writer = SummaryWriter(log_dir=args.tensorboard + "/" + opts_prefix + "_val")
-
+    
     for epoch in range(start_epoch, cfg.TRAIN.EPOCHS):
         # train
         train_loss, train_acc = train(train_loader, model, criterion, optimizer, epoch, device)
 
         # validate
         val_loss, val_acc, val_mae = validate(val_loader, model, criterion, epoch, device)
-
+        
         if args.tensorboard is not None:
             train_writer.add_scalar("loss", train_loss, epoch)
             train_writer.add_scalar("acc", train_acc, epoch)
