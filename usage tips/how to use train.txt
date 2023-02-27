@@ -1,0 +1,7 @@
+!!!install imgaug==0.2.9 but not a newer version!!!
+
+conda run train.py --data_dir D:/Python_jupyter_file/MAP583/age_estimation_old/appa-real-release --tensorboard tf_log
+conda run train.py --data_dir D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/appa-real-release --tensorboard tf_log
+conda run train.py --data_dir D:/Python_jupyter_file/MAP583/age_estimation_old/appa-real-release --tensorboard tf_log MODEL.ARCH se_resnet50 TRAIN.OPT sgd TRAIN.LR 0.1
+
+

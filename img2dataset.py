@@ -14,6 +14,7 @@ import torch.utils.data
 import torch.nn.functional as F
 from model import get_model
 from defaults import _C as cfg
+import pandas as pd
 
 
 def get_args():
@@ -23,9 +24,9 @@ def get_args():
                         help="Model weight to be tested")
     parser.add_argument("--margin", type=float, default=0.4,
                         help="Margin around detected face for age-gender estimation")
-    parser.add_argument("--img_dir", type=str, default="D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/photo",
+    parser.add_argument("--img_dir", type=str, default="D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/img",
                         help="Target image directory; if set, images in image_dir are used instead of webcam")
-    parser.add_argument("--output_dir", type=str, default="D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/photo/result",
+    parser.add_argument("--output_dir", type=str, default="D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/img/result",
                         help="Output directory to which resulting images will be stored if set")
     parser.add_argument("opts", default=[], nargs=argparse.REMAINDER,
                         help="Modify config options using the command-line")
@@ -77,6 +78,7 @@ def yield_images_from_dir(img_dir):
 
 
 def main():
+    df = pd.DataFrame(columns = ["file_name","apparent_age"])
     args = get_args()
 
     if args.opts:
@@ -135,7 +137,7 @@ def main():
             # detect faces using dlib detector
             detected = detector(input_img, 1)
             faces = np.empty((len(detected), img_size, img_size, 3))
-
+            
             if len(detected) > 0:
                 for i, d in enumerate(detected):
                     x1, y1, x2, y2, w, h = d.left(), d.top(), d.right() + 1, d.bottom() + 1, d.width(), d.height()
@@ -143,9 +145,18 @@ def main():
                     yw1 = max(int(y1 - margin * h), 0)
                     xw2 = min(int(x2 + margin * w), img_w - 1)
                     yw2 = min(int(y2 + margin * h), img_h - 1)
-                    cv2.rectangle(img, (x1, y1), (x2, y2), (255, 255, 255), 2)
-                    cv2.rectangle(img, (xw1, yw1), (xw2, yw2), (255, 0, 0), 2)
+                    ## add the samll rectangle to the image
+                    #cv2.rectangle(img, (x1, y1), (x2, y2), (255, 255, 255), 2)
+                    ## add the big rectangle to the image
+                    #cv2.rectangle(img, (xw1, yw1), (xw2, yw2), (255, 0, 0), 2)
+
                     faces[i] = cv2.resize(img[yw1:yw2 + 1, xw1:xw2 + 1], (img_size, img_size))
+                    
+                    #output the cut image which only contains the face in the photo 
+                    output_path = str(output_dir.joinpath(str(i)+"_"+name))
+                    #print(output_path)
+                    cv2.imwrite(output_path, faces[i])
+                    
 
                 # predict ages
                 inputs = torch.from_numpy(np.transpose(faces.astype(np.float32), (0, 3, 1, 2))).to(device)
@@ -154,21 +165,26 @@ def main():
                 predicted_ages = (outputs * ages).sum(axis=-1)
 
                 
-                # draw results
+                # draw results(predicted age)
                 for i, d in enumerate(detected):
-                    label = "{}".format(int(predicted_ages[i]))
-                    draw_label(img, (d.left(), d.top()), label)
+                    label = int(predicted_ages[i])
+                    #draw_label(img, (d.left(), d.top()), label)
+                    df.loc[df.shape[0]] = {"file_name":str(i)+"_"+name,"apparent_age": label }
                 
-
+                
+            
             if args.output_dir is not None:
                 output_path = output_dir.joinpath(name)
-                cv2.imwrite(str(output_path), img)
+                #cv2.imwrite(str(output_path), img)
             else:
                 cv2.imshow("result", img)
                 key = cv2.waitKey(-1) if img_dir else cv2.waitKey(30)
 
                 if key == 27:  # ESC
                     break
+    csv_path = (output_dir.joinpath("predicted_age.csv"))
+    df.to_csv(csv_path)
+            
 
 
 if __name__ == '__main__':

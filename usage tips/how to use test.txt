@@ -1,0 +1,1 @@
+conda run test.py --data_dir D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/appa-real-release --resume D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/misc/epoch044_0.02343_3.9984.pth
