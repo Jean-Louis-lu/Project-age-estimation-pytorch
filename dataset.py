@@ -45,6 +45,7 @@ class FaceDataset(Dataset):
             self.transform = ImgAugTransform()
         else:
             self.transform = lambda i: i
+            #self.transform = ImgAugTransform()
 
         self.x = []
         self.y = []

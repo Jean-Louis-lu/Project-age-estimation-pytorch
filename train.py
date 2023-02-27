@@ -29,10 +29,10 @@ def get_args():
                          and callable(pretrainedmodels.__dict__[name]))
     parser = argparse.ArgumentParser(description=f"available models: {model_names}",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--data_dir", type=str, required=True, help="Data root directory")
+    parser.add_argument("--data_dir", type=str, default="D:/Python_jupyter_file/MAP583/age_estimation_old/appa-real-release", help="Data root directory")
     parser.add_argument("--resume", type=str, default=None, help="Resume from checkpoint if any")
     parser.add_argument("--checkpoint", type=str, default="checkpoint", help="Checkpoint directory")
-    parser.add_argument("--tensorboard", type=str, default=None, help="Tensorboard log directory")
+    parser.add_argument("--tensorboard", type=str, default="tf_log", help="Tensorboard log directory")
     parser.add_argument('--multi_gpu', action="store_true", help="Use multi GPUs (data parallel)")
     parser.add_argument("opts", default=[], nargs=argparse.REMAINDER,
                         help="Modify config options using the command-line")
@@ -103,6 +103,7 @@ def validate(validate_loader, model, criterion, epoch, device):
         with tqdm(validate_loader) as _tqdm:
             for i, (x, y) in enumerate(_tqdm):
                 x = x.to(device)
+                y = y.type(torch.LongTensor)
                 y = y.to(device)
 
                 # compute output
@@ -192,7 +193,7 @@ def main():
 
     val_dataset = FaceDataset(args.data_dir, "valid", img_size=cfg.MODEL.IMG_SIZE, augment=False)
     val_loader = DataLoader(val_dataset, batch_size=cfg.TEST.BATCH_SIZE, shuffle=False,
-                            num_workers=cfg.TRAIN.WORKERS, drop_last=False)
+                             drop_last=False)
 
     scheduler = StepLR(optimizer, step_size=cfg.TRAIN.LR_DECAY_STEP, gamma=cfg.TRAIN.LR_DECAY_RATE,
                        last_epoch=start_epoch - 1)
