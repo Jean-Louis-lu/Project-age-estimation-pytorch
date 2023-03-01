@@ -20,7 +20,7 @@ from model import get_model
 from dataset_v1 import FaceDataset, NewFaceDataset
 from defaults import _C as cfg
 import ssl
-
+import urllib.request
 
 def get_args():
     model_names = sorted(name for name in pretrainedmodels.__dict__
@@ -29,7 +29,7 @@ def get_args():
                          and callable(pretrainedmodels.__dict__[name]))
     parser = argparse.ArgumentParser(description=f"available models: {model_names}",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--data_dir", type=str, default="D:/Python_jupyter_file/MAP583/age_estimation_old/appa-real-release", help="Data root directory")
+    parser.add_argument("--data_dir", type=str, default="D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/appa-real-release", help="Data root directory")
     parser.add_argument("--resume", type=str, default=None, help="Resume from checkpoint if any")
     parser.add_argument("--checkpoint", type=str, default="checkpoint", help="Checkpoint directory")
     parser.add_argument("--tensorboard", type=str, default="tf_log", help="Tensorboard log directory")
