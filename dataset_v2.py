@@ -1,4 +1,5 @@
 import argparse
+from ast import FunctionDef
 import better_exceptions
 from pathlib import Path
 import numpy as np
@@ -7,7 +8,7 @@ import torch
 import cv2
 from torch.utils.data import Dataset
 from imgaug import augmenters as iaa
-
+import torchvision.transforms as T
 
 class ImgAugTransform:
     def __init__(self):
@@ -32,21 +33,18 @@ class ImgAugTransform:
         return img
 
 class NewFaceDataset(Dataset):
-    def __init__(self, data_dir, data_type, img_size=224, augment=False, age_stddev=1.0):
+    def __init__(self, data_dir, data_type, img_size=224, age_stddev=1.0):
         assert(data_type in ("new_train"))
         csv_path = Path(data_dir).joinpath("new_train/predicted_age.csv")
         img_dir = Path(data_dir).joinpath(data_type)
         self.img_size = img_size
-        self.augment = augment
         self.age_stddev = age_stddev
-
-        if augment:
-            self.transform = ImgAugTransform()
-        else:
-            self.transform = lambda i: i
+        self.transform_weak = ImgAugTransform()
+        self.transform_strong = T.Compose([
+            T.RandAugment()
+        ])
 
         self.x = []
-        self.y = []
         df = pd.read_csv(str(csv_path))
         # ignore_path = Path(__file__).resolve().parent.joinpath("ignore_list.csv")
         # ignore_img_names = list(pd.read_csv(str(ignore_path))["img_name"].values)
@@ -60,22 +58,20 @@ class NewFaceDataset(Dataset):
             img_path = img_dir.joinpath(img_name)
             assert(img_path.is_file())
             self.x.append(str(img_path))
-            self.y.append(row["apparent_age"])
 
     def __len__(self):
-        return len(self.y)
+        return len(self.x)
 
     def __getitem__(self, idx):
         img_path = self.x[idx]
-        age = self.y[idx]
-
-        if self.augment:
-            age += np.random.randn() * self.age_stddev
 
         img = cv2.imread(str(img_path), 1)
         img = cv2.resize(img, (self.img_size, self.img_size))
-        img = self.transform(img).astype(np.float32)
-        return torch.from_numpy(np.transpose(img, (2, 0, 1))), np.clip(round(age), 0, 100)
+        img_weak = self.transform_weak(img).astype(np.float32)
+
+        img_th = torch.from_numpy(np.transpose(img, (2, 0, 1)))
+
+        return torch.from_numpy(np.transpose(img_weak, (2, 0, 1))), self.transform_strong(img_th)
 
 
 class FaceDataset(Dataset):
@@ -132,15 +128,10 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--data_dir", type=str, required=True)
     args = parser.parse_args()
-    dataset = FaceDataset(args.data_dir, "train")
-    print("train dataset len: {}".format(len(dataset)))
-    dataset = FaceDataset(args.data_dir, "valid")
-    print("valid dataset len: {}".format(len(dataset)))
-    dataset = FaceDataset(args.data_dir, "test")
-    print("test dataset len: {}".format(len(dataset)))
     dataset = NewFaceDataset(args.data_dir, "new_train")
     print("test dataset len: {}".format(len(dataset)))
-
+    print(dataset[0][0].shape)
+    print(dataset[0][1].shape)
 
 if __name__ == '__main__':
     main()
