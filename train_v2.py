@@ -54,22 +54,56 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
-def train(train_loader, model, criterion, optimizer, epoch, device):
+def train(train_dataset_X,train_dataset_U, model, criterion, criterion_U,optimizer, epoch, device,ratio):
     model.train()
     loss_monitor = AverageMeter()
     accuracy_monitor = AverageMeter()
 
-    with tqdm(train_loader) as _tqdm:
+    
+
+    train_loader_U = DataLoader(train_dataset_U, batch_size=cfg.TRAIN.BATCH_SIZE, shuffle=True,
+                              num_workers=cfg.TRAIN.WORKERS, drop_last=True)
+    
+
+    with tqdm(train_loader_U) as _tqdm:
         for x, y in _tqdm:
+            mu_B = len(x)
+            B = int(mu_B/ratio)
+            train_loader_X = DataLoader(train_dataset_X,shuffle=False,num_workers=cfg.TRAIN.WORKERS, drop_last=True,sampler = torch.utils.data.RandomSampler(train_dataset_X,num_samples=B))
+            ls = 0
+            with tqdm(train_loader_X) as _tqdm_X:
+                for x, y in _tqdm_X:
+                    x = x.to(device)
+                    y = y.type(torch.LongTensor)
+                    y = y.to(device)
+
+                    # compute output
+                    outputs = model(x)
+
+                    # calc loss
+                    loss = criterion(outputs, y)
+                    ls += loss.item()
+            ls = ls/B   
+
+            ##to be added: augementation of U
+            ##x:weak augmentation y:strong augmentation
+
             x = x.to(device)
-            y = y.type(torch.LongTensor)
             y = y.to(device)
 
             # compute output
-            outputs = model(x)
+            outputs_weak = model(x)
+            outputs_strong = model(y)
 
             # calc loss
-            loss = criterion(outputs, y)
+            lu_temp = criterion_U(outputs_strong,torch.argmax(outputs_weak,dim=1))
+            
+
+            #0.6 == tau to be added
+            lu = torch.mean(lu_temp * (torch.max(outputs_weak,dim=1)>0.6),dim=0)
+
+            #lbd_u to be added
+            loss = ls+lbd_u*lu
             cur_loss = loss.item()
 
             # calc accuracy
@@ -89,7 +123,9 @@ def train(train_loader, model, criterion, optimizer, epoch, device):
             _tqdm.set_postfix(OrderedDict(stage="train", epoch=epoch, loss=loss_monitor.avg),
                               acc=accuracy_monitor.avg, correct=correct_num, sample_num=sample_num)
 
+
     return loss_monitor.avg, accuracy_monitor.avg
+
 
 
 def validate(validate_loader, model, criterion, epoch, device):
@@ -195,10 +231,14 @@ def main():
         cudnn.benchmark = True
     
     criterion = nn.CrossEntropyLoss().to(device)
-    train_dataset = NewFaceDataset(args.data_dir, "new_train", img_size=cfg.MODEL.IMG_SIZE, augment=True,
+    criterion_U = nn.CrossEntropyLoss(reduction='None').to(device)
+
+    train_dataset_X = FaceDataset(args.data_dir, "train", img_size=cfg.MODEL.IMG_SIZE, augment=True,
                                 age_stddev=cfg.TRAIN.AGE_STDDEV)
-    train_loader = DataLoader(train_dataset, batch_size=cfg.TRAIN.BATCH_SIZE, shuffle=True,
-                              num_workers=cfg.TRAIN.WORKERS, drop_last=True)
+    
+    train_dataset_U = NewFaceDataset(args.data_dir, "new_train", img_size=cfg.MODEL.IMG_SIZE, augment=True,
+                                age_stddev=cfg.TRAIN.AGE_STDDEV)
+    
 
     val_dataset = FaceDataset(args.data_dir, "valid", img_size=cfg.MODEL.IMG_SIZE, augment=False)
     val_loader = DataLoader(val_dataset, batch_size=cfg.TEST.BATCH_SIZE, shuffle=False,
@@ -216,7 +256,7 @@ def main():
     
     for epoch in range(start_epoch, cfg.TRAIN.EPOCHS):
         # train
-        train_loss, train_acc = train(train_loader, model, criterion, optimizer, epoch, device)
+        train_loss, train_acc = train(train_dataset_X, train_dataset_U,model, criterion, criterion_U,optimizer, epoch, device,4)
 
         # validate
         val_loss, val_acc, val_mae = validate(val_loader, model, criterion, epoch, device)
