@@ -17,7 +17,7 @@ from torch.utils.tensorboard import SummaryWriter
 import pretrainedmodels
 import pretrainedmodels.utils
 from model import get_model
-from dataset_v1 import FaceDataset, NewFaceDataset
+from dataset_v2 import FaceDataset, NewFaceDataset
 from defaults import _C as cfg
 import ssl
 import urllib.request
@@ -55,11 +55,10 @@ class AverageMeter(object):
 
 
 def train(train_dataset_X,train_dataset_U, model, criterion, criterion_U,optimizer, epoch, device,ratio):
+    print("training")
     model.train()
     loss_monitor = AverageMeter()
     accuracy_monitor = AverageMeter()
-
-    
 
     train_loader_U = DataLoader(train_dataset_U, batch_size=cfg.TRAIN.BATCH_SIZE, shuffle=True,
                               num_workers=cfg.TRAIN.WORKERS, drop_last=True)
@@ -71,49 +70,46 @@ def train(train_dataset_X,train_dataset_U, model, criterion, criterion_U,optimiz
             B = int(mu_B/ratio)
             train_loader_X = DataLoader(train_dataset_X,shuffle=False,num_workers=cfg.TRAIN.WORKERS, drop_last=True,sampler = torch.utils.data.RandomSampler(train_dataset_X,num_samples=B))
             ls = 0
+            
             with tqdm(train_loader_X) as _tqdm_X:
-                for x, y in _tqdm_X:
-                    x = x.to(device)
-                    y = y.type(torch.LongTensor)
-                    y = y.to(device)
+                for x_X, y_X in _tqdm_X:
+                    x_X = x_X.to(device)
+                    y_X = y_X.type(torch.LongTensor)
+                    y_X = y_X.to(device)
 
                     # compute output
-                    outputs = model(x)
+                    outputs = model(x_X)
 
                     # calc loss
-                    loss = criterion(outputs, y)
+                    loss = criterion(outputs, y_X)
                     ls += loss.item()
             ls = ls/B   
-
-            ##to be added: augementation of U
-            ##x:weak augmentation y:strong augmentation
+            
+            
 
             x = x.to(device)
             y = y.to(device)
 
             # compute output
+
             outputs_weak = model(x)
             outputs_strong = model(y)
-
+        
             # calc loss
             lu_temp = criterion_U(outputs_strong,torch.argmax(outputs_weak,dim=1))
             
 
             #0.6 == tau to be added
-            lu = torch.mean(lu_temp * (torch.max(outputs_weak,dim=1)>0.6),dim=0)
+            lu = torch.mean(lu_temp * (torch.max(outputs_weak,1).values>0.8),dim=0)
 
             #lbd_u to be added
-            loss = ls+lbd_u*lu
+            loss = ls+lu
             cur_loss = loss.item()
-
-            # calc accuracy
-            _, predicted = outputs.max(1)
-            correct_num = predicted.eq(y).sum().item()
 
             # measure accuracy and record loss
             sample_num = x.size(0)
             loss_monitor.update(cur_loss, sample_num)
-            accuracy_monitor.update(correct_num, sample_num)
+            
 
             # compute gradient and do SGD step
             optimizer.zero_grad()
@@ -121,7 +117,7 @@ def train(train_dataset_X,train_dataset_U, model, criterion, criterion_U,optimiz
             optimizer.step()
 
             _tqdm.set_postfix(OrderedDict(stage="train", epoch=epoch, loss=loss_monitor.avg),
-                              acc=accuracy_monitor.avg, correct=correct_num, sample_num=sample_num)
+                              acc=accuracy_monitor.avg, sample_num=sample_num)
 
 
     return loss_monitor.avg, accuracy_monitor.avg
@@ -129,6 +125,7 @@ def train(train_dataset_X,train_dataset_U, model, criterion, criterion_U,optimiz
 
 
 def validate(validate_loader, model, criterion, epoch, device):
+    print("validation")
     model.eval()
     loss_monitor = AverageMeter()
     accuracy_monitor = AverageMeter()
@@ -231,12 +228,12 @@ def main():
         cudnn.benchmark = True
     
     criterion = nn.CrossEntropyLoss().to(device)
-    criterion_U = nn.CrossEntropyLoss(reduction='None').to(device)
+    criterion_U = nn.CrossEntropyLoss(reduction='none').to(device)
 
     train_dataset_X = FaceDataset(args.data_dir, "train", img_size=cfg.MODEL.IMG_SIZE, augment=True,
                                 age_stddev=cfg.TRAIN.AGE_STDDEV)
     
-    train_dataset_U = NewFaceDataset(args.data_dir, "new_train", img_size=cfg.MODEL.IMG_SIZE, augment=True,
+    train_dataset_U = NewFaceDataset(args.data_dir, "new_train", img_size=cfg.MODEL.IMG_SIZE,
                                 age_stddev=cfg.TRAIN.AGE_STDDEV)
     
 

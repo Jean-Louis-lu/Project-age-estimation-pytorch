@@ -71,7 +71,7 @@ class NewFaceDataset(Dataset):
 
         img_th = torch.from_numpy(np.transpose(img, (2, 0, 1)))
 
-        return torch.from_numpy(np.transpose(img_weak, (2, 0, 1))), self.transform_strong(img_th)
+        return torch.from_numpy(np.transpose(img_weak, (2, 0, 1))), self.transform_strong(img_th).float()
 
 
 class FaceDataset(Dataset):
