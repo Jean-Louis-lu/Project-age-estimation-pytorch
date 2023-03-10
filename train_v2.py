@@ -195,7 +195,7 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     model = model.to(device)
-
+ 
     # optionally resume from a checkpoint
     resume_path = args.resume
 
@@ -242,8 +242,8 @@ def main():
 
     scheduler = StepLR(optimizer, step_size=cfg.TRAIN.LR_DECAY_STEP, gamma=cfg.TRAIN.LR_DECAY_RATE,
                        last_epoch=start_epoch - 1)
-    best_val_mae = 10000.0
-    train_writer = None
+    best_val_mae = 10000.0 
+    train_writer = None 
 
     if args.tensorboard is not None:
         opts_prefix = "_".join(args.opts)
@@ -252,7 +252,7 @@ def main():
     
     for epoch in range(start_epoch, cfg.TRAIN.EPOCHS):
         # train
-        train_loss, train_acc = train(train_dataset_X, train_dataset_U,model, criterion, criterion_U,optimizer, epoch, device,0.95,4)
+        train_loss, train_acc = train(train_dataset_X, train_dataset_U,model, criterion, criterion_U,optimizer, epoch, device,0.8,2)
 
         # validate
         val_loss, val_acc, val_mae = validate(val_loader, model, criterion, epoch, device)
