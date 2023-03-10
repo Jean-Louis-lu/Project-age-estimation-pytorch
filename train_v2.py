@@ -54,7 +54,7 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
-def train(train_dataset_X,train_dataset_U, model, criterion, criterion_U,optimizer, epoch, device,ratio):
+def train(train_dataset_X,train_dataset_U, model, criterion, criterion_U,optimizer, epoch, device,tau,ratio):
     print("training")
     model.train()
     loss_monitor = AverageMeter()
@@ -99,8 +99,7 @@ def train(train_dataset_X,train_dataset_U, model, criterion, criterion_U,optimiz
             lu_temp = criterion_U(outputs_strong,torch.argmax(outputs_weak,dim=1))
             
 
-            #0.6 == tau to be added
-            lu = torch.mean(lu_temp * (torch.max(outputs_weak,1).values>0.8),dim=0)
+            lu = torch.mean(lu_temp * (torch.max(outputs_weak,1).values>tau),dim=0)
 
             #lbd_u to be added
             loss = ls+lu
@@ -253,7 +252,7 @@ def main():
     
     for epoch in range(start_epoch, cfg.TRAIN.EPOCHS):
         # train
-        train_loss, train_acc = train(train_dataset_X, train_dataset_U,model, criterion, criterion_U,optimizer, epoch, device,4)
+        train_loss, train_acc = train(train_dataset_X, train_dataset_U,model, criterion, criterion_U,optimizer, epoch, device,0.95,4)
 
         # validate
         val_loss, val_acc, val_mae = validate(val_loader, model, criterion, epoch, device)

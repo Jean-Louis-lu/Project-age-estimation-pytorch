@@ -18,7 +18,7 @@ import pandas as pd
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description="Age estimation demo",
+    parser = argparse.ArgumentParser(description="img2dataset",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--resume", type=str, default=None,
                         help="Model weight to be tested")
@@ -157,7 +157,8 @@ def main():
                     #print(output_path)
                     cv2.imwrite(output_path, faces[i])
                     
-
+                
+                
                 # predict ages
                 inputs = torch.from_numpy(np.transpose(faces.astype(np.float32), (0, 3, 1, 2))).to(device)
                 outputs = F.softmax(model(inputs), dim=-1).cpu().numpy()
@@ -170,7 +171,7 @@ def main():
                     label = int(predicted_ages[i])
                     #draw_label(img, (d.left(), d.top()), label)
                     df.loc[df.shape[0]] = {"file_name":str(i)+"_"+name,"apparent_age": label }
-                
+                 
                 
             
             if args.output_dir is not None:
