@@ -21,6 +21,8 @@ from dataset_v2 import FaceDataset, NewFaceDataset
 from defaults import _C as cfg
 import ssl
 import urllib.request
+import torchvision.transforms as transforms
+import matplotlib.pyplot as plt
 
 def get_args():
     model_names = sorted(name for name in pretrainedmodels.__dict__
@@ -234,6 +236,25 @@ def main():
     
     train_dataset_U = NewFaceDataset(args.data_dir, "new_train", img_size=cfg.MODEL.IMG_SIZE,
                                 age_stddev=cfg.TRAIN.AGE_STDDEV)
+    
+
+    #show some augmented images
+    """
+    print("here")
+    unloader = transforms.ToPILImage()
+    for i in range(5):
+        weak = train_dataset_U[i][0]
+        strong = train_dataset_U[i][0]
+        image_weak = unloader(weak)
+        image_strong = unloader(strong)
+        image_weak.save('weak_{}.jpg'.format(i))
+        image_strong.save('strong_{}.jpg'.format(i))
+    """  
+        
+        
+        
+                   
+     
     
 
     val_dataset = FaceDataset(args.data_dir, "valid", img_size=cfg.MODEL.IMG_SIZE, augment=False)

@@ -158,17 +158,19 @@ def main():
                     cv2.imwrite(output_path, faces[i])
                     
                 
+                """
                 
                 # predict ages
                 inputs = torch.from_numpy(np.transpose(faces.astype(np.float32), (0, 3, 1, 2))).to(device)
                 outputs = F.softmax(model(inputs), dim=-1).cpu().numpy()
                 ages = np.arange(0, 101)
-                predicted_ages = (outputs * ages).sum(axis=-1)
-
+                #predicted_ages = (outputs * ages).sum(axis=-1)
+                """
                 
                 # draw results(predicted age)
                 for i, d in enumerate(detected):
-                    label = int(predicted_ages[i])
+                    #label = int(predicted_ages[i])
+                    label  =0
                     #draw_label(img, (d.left(), d.top()), label)
                     df.loc[df.shape[0]] = {"file_name":str(i)+"_"+name,"apparent_age": label }
                  
