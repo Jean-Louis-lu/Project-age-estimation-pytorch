@@ -29,7 +29,7 @@ def get_args():
                          and callable(pretrainedmodels.__dict__[name]))
     parser = argparse.ArgumentParser(description=f"available models: {model_names}",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--data_dir", type=str, default="D:/Python_jupyter_file/MAP583/age_estimation_old/appa-real-release", help="Data root directory")
+    parser.add_argument("--data_dir", type=str, default="D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/appa-real-release", help="Data root directory")
     parser.add_argument("--resume", type=str, default=None, help="Resume from checkpoint if any")
     parser.add_argument("--checkpoint", type=str, default="checkpoint", help="Checkpoint directory")
     parser.add_argument("--tensorboard", type=str, default="tf_log", help="Tensorboard log directory")
@@ -61,6 +61,7 @@ def train(train_loader, model, criterion, optimizer, epoch, device):
 
     with tqdm(train_loader) as _tqdm:
         for x, y in _tqdm:
+            
             x = x.to(device)
             y = y.type(torch.LongTensor)
             y = y.to(device)
@@ -164,6 +165,7 @@ def main():
 
     model = model.to(device)
 
+    """"
     # optionally resume from a checkpoint
     resume_path = args.resume
 
@@ -178,7 +180,7 @@ def main():
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         else:
             print("=> no checkpoint found at '{}'".format(resume_path))
-
+    """
     if args.multi_gpu:
         model = nn.DataParallel(model)
 
@@ -189,7 +191,7 @@ def main():
     train_dataset = FaceDataset(args.data_dir, "train", img_size=cfg.MODEL.IMG_SIZE, augment=True,
                                 age_stddev=cfg.TRAIN.AGE_STDDEV)
     train_loader = DataLoader(train_dataset, batch_size=cfg.TRAIN.BATCH_SIZE, shuffle=True,
-                              num_workers=cfg.TRAIN.WORKERS, drop_last=True)
+                               drop_last=True)
 
     val_dataset = FaceDataset(args.data_dir, "valid", img_size=cfg.MODEL.IMG_SIZE, augment=False)
     val_loader = DataLoader(val_dataset, batch_size=cfg.TEST.BATCH_SIZE, shuffle=False,
@@ -201,7 +203,7 @@ def main():
     train_writer = None
 
     if args.tensorboard is not None:
-        opts_prefix = "_".join(args.opts)
+        opts_prefix = "_".join(args.opts) 
         train_writer = SummaryWriter(log_dir=args.tensorboard + "/" + opts_prefix + "_train")
         val_writer = SummaryWriter(log_dir=args.tensorboard + "/" + opts_prefix + "_val")
     

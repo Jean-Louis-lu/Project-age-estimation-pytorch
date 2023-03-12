@@ -27,6 +27,7 @@ class ImgAugTransform:
             iaa.Fliplr(0.5),
         ])
 
+
     def __call__(self, img):
         img = np.array(img)
         img = self.aug.augment_image(img)

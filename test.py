@@ -24,7 +24,7 @@ def get_args():
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--data_dir", type=str, help="Data root directory",default="D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/appa-real-release")
     #parser.add_argument("--resume", type=str, help="Model weight to be tested",default= "D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/misc/epoch044_0.02343_3.9984.pth")
-    parser.add_argument("--resume", type=str, help="Model weight to be tested",default= "D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/checkpoint/epoch045_0.21608_4.7912.pth")
+    parser.add_argument("--resume", type=str, help="Model weight to be tested",default= "D:/Python_jupyter_file/MAP583/Project-age-estimation-pytorch/checkpoint/epoch009_0.25653_10.4021.pth")
     
     parser.add_argument("opts", default=[], nargs=argparse.REMAINDER,
                         help="Modify config options using the command-line")

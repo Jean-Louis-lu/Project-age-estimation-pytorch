@@ -21,7 +21,7 @@ from dataset_v2 import FaceDataset, NewFaceDataset
 from defaults import _C as cfg
 import ssl
 import urllib.request
-import torchvision.transforms as transforms
+from torchvision.transforms.functional import to_pil_image
 import matplotlib.pyplot as plt
 
 def get_args():
@@ -62,33 +62,29 @@ def train(train_dataset_X,train_dataset_U, model, criterion, criterion_U,optimiz
     loss_monitor = AverageMeter()
     accuracy_monitor = AverageMeter()
 
-    train_loader_U = DataLoader(train_dataset_U, batch_size=cfg.TRAIN.BATCH_SIZE, shuffle=True,
-                              num_workers=cfg.TRAIN.WORKERS, drop_last=True)
-    
+    train_loader_U = DataLoader(train_dataset_U, batch_size=cfg.TRAIN.BATCH_SIZE, shuffle=True, drop_last=True)
 
     with tqdm(train_loader_U) as _tqdm:
         for x, y in _tqdm:
+            
             mu_B = len(x)
             B = int(mu_B/ratio)
-            train_loader_X = DataLoader(train_dataset_X,shuffle=False,num_workers=cfg.TRAIN.WORKERS, drop_last=True,sampler = torch.utils.data.RandomSampler(train_dataset_X,num_samples=B))
+
+            train_loader_X = DataLoader(train_dataset_X,batch_size=B,shuffle=True)
             ls = 0
             
-            with tqdm(train_loader_X) as _tqdm_X:
-                for x_X, y_X in _tqdm_X:
-                    x_X = x_X.to(device)
-                    y_X = y_X.type(torch.LongTensor)
-                    y_X = y_X.to(device)
+            for x_X, y_X in train_loader_X:
+                x_X = x_X.to(device)
+                y_X = y_X.type(torch.LongTensor)
+                y_X = y_X.to(device)
 
-                    # compute output
-                    outputs = model(x_X)
+                # compute output
+                outputs = model(x_X)
 
-                    # calc loss
-                    loss = criterion(outputs, y_X)
-                    ls += loss.item()
-            ls = ls/B   
+                # calc loss
+                ls = criterion(outputs, y_X).item()
+
             
-            
-
             x = x.to(device)
             y = y.to(device)
 
@@ -104,7 +100,7 @@ def train(train_dataset_X,train_dataset_U, model, criterion, criterion_U,optimiz
             lu = torch.mean(lu_temp * (torch.max(outputs_weak,1).values>tau),dim=0)
 
             #lbd_u to be added
-            loss = ls+lu
+            loss = ls+0*lu
             cur_loss = loss.item()
 
             # measure accuracy and record loss
@@ -198,12 +194,13 @@ def main():
 
     model = model.to(device)
  
+    """
     # optionally resume from a checkpoint
     resume_path = args.resume
 
     if resume_path is None:
         resume_path = Path(__file__).resolve().parent.joinpath("misc", "epoch044_0.02343_3.9984.pth")
-
+    
     if not resume_path.is_file():
         print(f"=> model path is not set; start downloading trained model to {resume_path}")
         url = "https://github.com/yu4u/age-estimation-pytorch/releases/download/v1.0/epoch044_0.02343_3.9984.pth"
@@ -221,7 +218,7 @@ def main():
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         else:
             print("=> no checkpoint found at '{}'".format(resume_path))
-
+    """
     if args.multi_gpu:
         model = nn.DataParallel(model)
 
@@ -238,24 +235,39 @@ def main():
                                 age_stddev=cfg.TRAIN.AGE_STDDEV)
     
 
-    #show some augmented images
     """
+    #show some augmented images
+    
     print("here")
-    unloader = transforms.ToPILImage()
     for i in range(5):
         weak = train_dataset_U[i][0]
-        strong = train_dataset_U[i][0]
-        image_weak = unloader(weak)
-        image_strong = unloader(strong)
-        image_weak.save('weak_{}.jpg'.format(i))
-        image_strong.save('strong_{}.jpg'.format(i))
-    """  
+        strong = train_dataset_U[i][1]
+        
+        weak = weak/weak.max()
+        
+        w = torch.zeros([3,224,224])
+        w[0] = weak[2]
+        w[1] = weak[1]
+        w[2] = weak[0]
+        weak = w
+        
+
+        image_weak = to_pil_image(weak)
+        image_weak.save('weak_{}.png'.format(i))
+
+        strong = strong/strong.max()
+        
+        s = torch.zeros([3,224,224])
+        s[0] = strong[2]
+        s[1] = strong[1]
+        s[2] = strong[0]
+        strong = s
+
+        image_strong = to_pil_image(strong)
+        image_strong.save('strong_{}.png'.format(i))
+    """ 
         
         
-        
-                   
-     
-    
 
     val_dataset = FaceDataset(args.data_dir, "valid", img_size=cfg.MODEL.IMG_SIZE, augment=False)
     val_loader = DataLoader(val_dataset, batch_size=cfg.TEST.BATCH_SIZE, shuffle=False,
