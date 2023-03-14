@@ -1,5 +1,8 @@
-# DL-DIY potential project ideas
 # Colab adaptation - FixMatch
+
+
+DL-DIY potential project ideas
+
 - pose this problem as regression or classification and compare them
 - implementing the [DEX method](http://people.ee.ethz.ch/~timofter/publications/Rothe-IJCV-2016.pdf) and [Residual DEX method](http://people.ee.ethz.ch/~timofter/publications/Agustsson-FG-2017.pdf)
 - implement and test [label smoothing](https://towardsdatascience.com/what-is-label-smoothing-108debd7ef06) for classification
